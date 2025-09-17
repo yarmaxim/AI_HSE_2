@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -39,7 +39,7 @@
             color: #333;
             font-size: 2.5em;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -72,8 +72,8 @@
 
         input[type="text"]:focus, textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
         }
 
         .button-group {
@@ -94,13 +94,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.35);
         }
 
         .btn-secondary {
@@ -131,8 +131,8 @@
         }
 
         .result-display {
-            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
-            border: 2px solid #4caf50;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
             border-radius: 10px;
             padding: 20px;
             margin-top: 20px;
@@ -140,10 +140,24 @@
         }
 
         .result-display h3 {
-            color: #2e7d32;
+            color: #0f172a;
             margin-bottom: 15px;
             font-size: 1.3em;
         }
+
+        .result-positive {
+            background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+            border-color: #10b981;
+        }
+
+        .result-positive h3 { color: #065f46; }
+
+        .result-negative {
+            background: linear-gradient(135deg, #fef2f2, #fff1f2);
+            border-color: #ef4444;
+        }
+
+        .result-negative h3 { color: #7f1d1d; }
 
         .confidence-bar {
             background: #e0e0e0;
@@ -155,10 +169,11 @@
 
         .confidence-fill {
             height: 100%;
-            background: linear-gradient(90deg, #4caf50, #8bc34a);
             border-radius: 10px;
             transition: width 0.5s ease;
         }
+        .fill-positive { background: linear-gradient(90deg, #10b981, #34d399); }
+        .fill-negative { background: linear-gradient(90deg, #ef4444, #f97316); }
 
         .loading {
             display: none;
@@ -169,7 +184,7 @@
 
         .spinner {
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid #0ea5e9;
             border-radius: 50%;
             width: 30px;
             height: 30px;
@@ -206,7 +221,7 @@
                 <input type="text" id="apiUrl" placeholder="https://api-inference.huggingface.co/models/your-model" required>
                 <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
                     <strong>Как получить URL:</strong><br>
-                    1. Перейдите на <a href="https://huggingface.co/models" target="_blank" style="color: #667eea;">huggingface.co/models</a><br>
+                    1. Перейдите на <a href="https://huggingface.co/models" target="_blank" style="color: #0ea5e9;">huggingface.co/models</a><br>
                     2. Найдите нужную модель (например, для анализа тональности: "cardiffnlp/twitter-roberta-base-sentiment-latest")<br>
                     3. URL будет: <code>https://api-inference.huggingface.co/models/название-модели</code>
                 </small>
@@ -217,8 +232,8 @@
                 <input type="text" id="apiToken" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxx">
                 <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
                     <strong>Как получить токен:</strong><br>
-                    1. Зарегистрируйтесь на <a href="https://huggingface.co" target="_blank" style="color: #667eea;">huggingface.co</a><br>
-                    2. Перейдите в <a href="https://huggingface.co/settings/tokens" target="_blank" style="color: #667eea;">Settings → Access Tokens</a><br>
+                    1. Зарегистрируйтесь на <a href="https://huggingface.co" target="_blank" style="color: #0ea5e9;">huggingface.co</a><br>
+                    2. Перейдите в <a href="https://huggingface.co/settings/tokens" target="_blank" style="color: #0ea5e9;">Settings → Access Tokens</a><br>
                     3. Создайте новый токен с правами "Read"<br>
                     4. Скопируйте токен (начинается с "hf_")
                 </small>
@@ -398,13 +413,12 @@
             return result;
         }
 
-        // Отображение результатов
+        // Отображение результатов (бинарное: Положительный / Негативный)
         function displayResults(results) {
             const resultsContainer = document.getElementById('analysisResults');
             
             console.log('Отображаем результаты:', results);
             
-            // Проверяем, что результаты существуют
             if (!results) {
                 resultsContainer.innerHTML = `
                     <div style="background: #ffebee; border: 1px solid #f44336; border-radius: 5px; padding: 10px; color: #c62828;">
@@ -415,62 +429,69 @@
                 return;
             }
 
-            // Если результат - массив (обычный случай для Hugging Face)
-            if (Array.isArray(results[0]) && results[0].length > 0) {
-                let html = '';
-                
-                // Сортируем результаты по уверенности (score)
-                results[0].sort((a, b) => b.score - a.score);
-                
-                results[0].forEach((result, index) => {
-                    if (result.label && result.score !== undefined) {
-                        const percentage = Math.round(result.score * 100);
-                        const labelText = translateLabel(result.label);
-                        
-                        html += `
-                            <div style="margin-bottom: 15px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span style="font-weight: 600;">${labelText}</span>
-                                    <span>${percentage}%</span>
-                                </div>
-                                <div class="confidence-bar">
-                                    <div class="confidence-fill" style="width: ${percentage}%"></div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                });
-                
-                resultsContainer.innerHTML = html || '<p>Результаты не найдены</p>';
-            } 
-            // Если результат - объект с одним результатом
-            else if (results.label && results.score !== undefined) {
-                const percentage = Math.round(results.score * 100);
-                const labelText = translateLabel(results.label);
-                
-                resultsContainer.innerHTML = `
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span style="font-weight: 600;">${labelText}</span>
-                            <span>${percentage}%</span>
-                        </div>
-                        <div class="confidence-bar">
-                            <div class="confidence-fill" style="width: ${percentage}%"></div>
-                        </div>
-                    </div>
-                `;
-            } 
-            // Если формат результата неожиданный - показываем JSON
-            else {
-                resultsContainer.innerHTML = `
-                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 10px;">
-                        <strong>Результат анализа (сырой формат):</strong><br>
-                        <pre style="margin-top: 10px; white-space: pre-wrap; font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 5px;">${JSON.stringify(results, null, 2)}</pre>
-                    </div>
-                `;
-            }
+            const binary = determineBinarySentiment(results);
+            const percentage = Math.round(binary.score * 100);
+            const isPositive = binary.label === 'Положительный';
+
+            // Обновляем оформление блока результатов
+            resultDisplay.classList.remove('result-positive', 'result-negative');
+            resultDisplay.classList.add(isPositive ? 'result-positive' : 'result-negative');
+
+            // Рендерим один итог
+            resultsContainer.innerHTML = `
+                <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 1.05em;">${isPositive ? 'Положительный' : 'Негативный'}</span>
+                    <span style="font-size: 0.9em; color: ${isPositive ? '#065f46' : '#7f1d1d'};">уверенность: ${percentage}%</span>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill ${isPositive ? 'fill-positive' : 'fill-negative'}" style="width: ${percentage}%"></div>
+                </div>
+            `;
 
             resultDisplay.style.display = 'block';
+        }
+
+        // Определение бинарной тональности из разных форматов ответа моделей
+        function determineBinarySentiment(results) {
+            // Инициализация
+            let positiveScore = 0;
+            let negativeScore = 0;
+            let neutralScore = 0;
+
+            const accumulate = (label, score) => {
+                const up = String(label).toUpperCase();
+                if (up === 'POSITIVE' || up === 'LABEL_2' || up === 'POS') positiveScore = Math.max(positiveScore, score);
+                else if (up === 'NEGATIVE' || up === 'LABEL_0' || up === 'NEG') negativeScore = Math.max(negativeScore, score);
+                else if (up === 'NEUTRAL' || up === 'LABEL_1' || up === 'NEU') neutralScore = Math.max(neutralScore, score);
+            };
+
+            // Разные форматы ответа HF
+            if (Array.isArray(results)) {
+                // Частый формат: [ [ {label, score}, ... ] ]
+                if (Array.isArray(results[0])) {
+                    results[0].forEach(item => { if (item && item.label != null && item.score != null) accumulate(item.label, item.score); });
+                } else {
+                    // Иногда: [ {label, score}, ... ]
+                    results.forEach(item => { if (item && item.label != null && item.score != null) accumulate(item.label, item.score); });
+                }
+            } else if (results && results.label != null && results.score != null) {
+                accumulate(results.label, results.score);
+            }
+
+            // Если нет явных полярностей, считаем по максимуму
+            const hasAny = positiveScore > 0 || negativeScore > 0 || neutralScore > 0;
+            if (!hasAny) {
+                return { label: 'Негативный', score: 0.5 };
+            }
+
+            // Если известны обе полярности — берем максимум
+            if (positiveScore > 0 || negativeScore > 0) {
+                if (positiveScore >= negativeScore) return { label: 'Положительный', score: positiveScore || 1 - negativeScore };
+                return { label: 'Негативный', score: negativeScore || 1 - positiveScore };
+            }
+
+            // Если пришла только нейтральная — трактуем как негативную (требование: 2 значения)
+            return { label: 'Негативный', score: Math.max(0.5, 1 - neutralScore) };
         }
 
         // Функция для перевода меток на русский
