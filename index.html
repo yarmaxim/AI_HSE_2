@@ -3,57 +3,537 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Контакты - Wild Lens</title>
-    <link rel="stylesheet" href="styles/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Анализатор сообщений с Hugging Face</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e1e5e9;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .message-display {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .result-display {
+            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-display h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .confidence-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <nav>
-        <div class="nav-container">
-            <div class="logo">
-                <a href="index.html">Wild Lens</a>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Анализатор сообщений</h1>
+            <p>Используйте Hugging Face API для анализа случайно сгенерированных сообщений</p>
+        </div>
+
+        <form id="apiForm">
+            <div class="form-group">
+                <label for="apiUrl">URL вашего Hugging Face API:</label>
+                <input type="text" id="apiUrl" placeholder="https://api-inference.huggingface.co/models/your-model" required>
+                <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
+                    <strong>Как получить URL:</strong><br>
+                    1. Перейдите на <a href="https://huggingface.co/models" target="_blank" style="color: #667eea;">huggingface.co/models</a><br>
+                    2. Найдите нужную модель (например, для анализа тональности: "cardiffnlp/twitter-roberta-base-sentiment-latest")<br>
+                    3. URL будет: <code>https://api-inference.huggingface.co/models/название-модели</code>
+                </small>
             </div>
-            <ul class="nav-menu">
-                <li><a href="index.html">Главная</a></li>
-                <li><a href="about.html">Обо мне</a></li>
-                <li><a href="gallery.html">Галерея</a></li>
-                <li><a href="blog.html">Блог</a></li>
-                <li><a href="contact.html">Контакты</a></li>
-            </ul>
-            <div class="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+            
+            <div class="form-group">
+                <label for="apiToken">API Token (опционально):</label>
+                <input type="text" id="apiToken" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxx">
+                <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
+                    <strong>Как получить токен:</strong><br>
+                    1. Зарегистрируйтесь на <a href="https://huggingface.co" target="_blank" style="color: #667eea;">huggingface.co</a><br>
+                    2. Перейдите в <a href="https://huggingface.co/settings/tokens" target="_blank" style="color: #667eea;">Settings → Access Tokens</a><br>
+                    3. Создайте новый токен с правами "Read"<br>
+                    4. Скопируйте токен (начинается с "hf_")
+                </small>
+            </div>
+        </form>
+
+        <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #333; margin-bottom: 15px; font-size: 1.2em;">📋 Популярные модели для анализа:</h3>
+            <div style="display: grid; gap: 10px; font-size: 0.9em;">
+                <div style="background: white; padding: 10px; border-radius: 5px; border-left: 4px solid #667eea;">
+                    <strong>Анализ тональности:</strong><br>
+                    <code>cardiffnlp/twitter-roberta-base-sentiment-latest</code>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 5px; border-left: 4px solid #4caf50;">
+                    <strong>Классификация эмоций:</strong><br>
+                    <code>j-hartmann/emotion-english-distilroberta-base</code>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 5px; border-left: 4px solid #ff9800;">
+                    <strong>Определение языка:</strong><br>
+                    <code>papluca/xlm-roberta-base-language-detection</code>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 5px; border-left: 4px solid #9c27b0;">
+                    <strong>Анализ токсичности:</strong><br>
+                    <code>unitary/toxic-bert</code>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <section class="contact-full">
-        <div class="container">
-            <h2>Контакты</h2>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <h3>Свяжитесь со мной</h3>
-                    <p>Я всегда открыт для новых проектов, сотрудничества и интересных предложений. Не стесняйтесь обращаться!</p>
-                    
-                    <div class="contact-details">
-                        <p><strong>Email:</strong> hello@wildlens.com</p>
-                        <p><strong>Телефон:</strong> +7 (999) 123-45-67</p>
-                        <p><strong>Адрес:</strong> Москва, ул. Природная, 15</p>
+        <div class="button-group">
+            <button type="button" id="generateBtn" class="btn-secondary">🎲 Сгенерировать сообщение</button>
+            <button type="button" id="analyzeBtn" class="btn-primary">🔍 Анализировать</button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button type="button" id="testBtn" class="btn-secondary" style="background: #e3f2fd; color: #1976d2; border: 2px solid #bbdefb;">
+                🧪 Тест с примером модели
+            </button>
+        </div>
+
+        <div class="message-display" id="messageDisplay">
+            Нажмите "Сгенерировать сообщение" для создания случайного текста
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            Анализируем сообщение...
+        </div>
+
+        <div class="result-display" id="resultDisplay">
+            <h3>📊 Результаты анализа:</h3>
+            <div id="analysisResults"></div>
+        </div>
+
+        <div class="error" id="errorDisplay"></div>
+    </div>
+
+    <script>
+        // Массив случайных сообщений для генерации
+        const randomMessages = [
+            "Сегодня прекрасная погода! Хочется прогуляться по парку.",
+            "Я думаю, что искусственный интеллект изменит мир.",
+            "Пицца с ананасами - это преступление против человечества!",
+            "Книги - лучшие друзья человека. Они никогда не предадут.",
+            "Спорт помогает держать тело и разум в тонусе.",
+            "Музыка - это язык души, понятный всем народам.",
+            "Путешествия расширяют кругозор и делают нас мудрее.",
+            "Дружба - это самое ценное, что у нас есть в жизни.",
+            "Технологии развиваются слишком быстро для некоторых людей.",
+            "Природа нуждается в нашей защите больше, чем когда-либо.",
+            "Образование - это ключ к успеху и самореализации.",
+            "Кулинария - это искусство, доступное каждому.",
+            "Смех - лучшее лекарство от всех болезней.",
+            "Сон - это не роскошь, а необходимость для здоровья.",
+            "Творчество помогает выразить то, что нельзя сказать словами."
+        ];
+
+        let currentMessage = '';
+        let apiUrl = '';
+        let apiToken = '';
+
+        // Элементы DOM
+        const generateBtn = document.getElementById('generateBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const testBtn = document.getElementById('testBtn');
+        const messageDisplay = document.getElementById('messageDisplay');
+        const resultDisplay = document.getElementById('resultDisplay');
+        const loading = document.getElementById('loading');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const apiUrlInput = document.getElementById('apiUrl');
+        const apiTokenInput = document.getElementById('apiToken');
+
+        // Генерация случайного сообщения
+        generateBtn.addEventListener('click', () => {
+            const randomIndex = Math.floor(Math.random() * randomMessages.length);
+            currentMessage = randomMessages[randomIndex];
+            messageDisplay.textContent = currentMessage;
+            resultDisplay.style.display = 'none';
+            errorDisplay.style.display = 'none';
+        });
+
+        // Тест с примером модели
+        testBtn.addEventListener('click', () => {
+            // Устанавливаем пример URL и генерируем сообщение
+            apiUrlInput.value = 'https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment-latest';
+            
+            const randomIndex = Math.floor(Math.random() * randomMessages.length);
+            currentMessage = randomMessages[randomIndex];
+            messageDisplay.textContent = currentMessage;
+            resultDisplay.style.display = 'none';
+            errorDisplay.style.display = 'none';
+            
+            // Показываем уведомление
+            showError('✅ URL модели установлен! Теперь нажмите "Анализировать" для тестирования.', true);
+        });
+
+        // Анализ сообщения
+        analyzeBtn.addEventListener('click', async () => {
+            // Получаем данные из формы
+            apiUrl = apiUrlInput.value.trim();
+            apiToken = apiTokenInput.value.trim();
+
+            if (!apiUrl) {
+                showError('Пожалуйста, введите URL вашего Hugging Face API');
+                return;
+            }
+
+            if (!currentMessage) {
+                showError('Пожалуйста, сначала сгенерируйте сообщение');
+                return;
+            }
+
+            // Показываем загрузку
+            loading.style.display = 'block';
+            resultDisplay.style.display = 'none';
+            errorDisplay.style.display = 'none';
+
+            try {
+                const result = await analyzeMessage(currentMessage, apiUrl, apiToken);
+                displayResults(result);
+            } catch (error) {
+                showError('Ошибка при анализе сообщения: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        // Функция анализа сообщения через Hugging Face API
+        async function analyzeMessage(message, url, token) {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            console.log('Отправляем запрос:', { url, message, headers });
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    inputs: message
+                })
+            });
+
+            console.log('Получен ответ:', response.status, response.statusText);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа:', errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Результат API:', result);
+            return result;
+        }
+
+        // Отображение результатов
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('analysisResults');
+            
+            console.log('Отображаем результаты:', results);
+            
+            // Проверяем, что результаты существуют
+            if (!results) {
+                resultsContainer.innerHTML = `
+                    <div style="background: #ffebee; border: 1px solid #f44336; border-radius: 5px; padding: 10px; color: #c62828;">
+                        <strong>Ошибка:</strong> Результат анализа пуст или не определен
                     </div>
-                    
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-                        <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
-                        <a href="#"><i class="fab fa-500px"></i> 500px</a>
-                        <a href="#"><i class="fab fa-telegram"></i> Telegram</a>
-                    </div>
-                </div>
+                `;
+                resultDisplay.style.display = 'block';
+                return;
+            }
+
+            // Если результат - массив (обычный случай для Hugging Face)
+            if (Array.isArray(results[0]) && results[0].length > 0) {
+                let html = '';
                 
-                <div class="contact-form">
-                    <h3>Отправить сообщение</h3>
-                    <form id="contactForm">
-                        <div class="form-group">
-                            <label for="name">Ваше имя</label>
-                            <input type="text" id="name" name="name" required>
+                // Сортируем результаты по уверенности (score)
+                results[0].sort((a, b) => b.score - a.score);
+                
+                results[0].forEach((result, index) => {
+                    if (result.label && result.score !== undefined) {
+                        const percentage = Math.round(result.score * 100);
+                        const labelText = translateLabel(result.label);
+                        
+                        html += `
+                            <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="font-weight: 600;">${labelText}</span>
+                                    <span>${percentage}%</span>
+                                </div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                resultsContainer.innerHTML = html || '<p>Результаты не найдены</p>';
+            } 
+            // Если результат - объект с одним результатом
+            else if (results.label && results.score !== undefined) {
+                const percentage = Math.round(results.score * 100);
+                const labelText = translateLabel(results.label);
+                
+                resultsContainer.innerHTML = `
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-weight: 600;">${labelText}</span>
+                            <span>${percentage}%</span>
                         </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            } 
+            // Если формат результата неожиданный - показываем JSON
+            else {
+                resultsContainer.innerHTML = `
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 10px;">
+                        <strong>Результат анализа (сырой формат):</strong><br>
+                        <pre style="margin-top: 10px; white-space: pre-wrap; font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 5px;">${JSON.stringify(results, null, 2)}</pre>
+                    </div>
+                `;
+            }
+
+            resultDisplay.style.display = 'block';
+        }
+
+        // Функция для перевода меток на русский
+        function translateLabel(label) {
+            const translations = {
+                'LABEL_0': 'Негативная',
+                'LABEL_1': 'Нейтральная', 
+                'LABEL_2': 'Позитивная',
+                'NEGATIVE': 'Негативная',
+                'NEUTRAL': 'Нейтральная',
+                'POSITIVE': 'Позитивная',
+                'NEG': 'Негативная',
+                'NEU': 'Нейтральная',
+                'POS': 'Позитивная'
+            };
+            
+            return translations[label] || label;
+        }
+
+        // Показать ошибку или сообщение
+        function showError(message, isSuccess = false) {
+            errorDisplay.textContent = message;
+            errorDisplay.style.display = 'block';
+            
+            if (isSuccess) {
+                errorDisplay.style.background = '#e8f5e8';
+                errorDisplay.style.border = '2px solid #4caf50';
+                errorDisplay.style.color = '#2e7d32';
+            } else {
+                errorDisplay.style.background = '#ffebee';
+                errorDisplay.style.border = '2px solid #f44336';
+                errorDisplay.style.color = '#c62828';
+            }
+            
+            // Автоматически скрыть через 5 секунд для успешных сообщений
+            if (isSuccess) {
+                setTimeout(() => {
+                    errorDisplay.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Сохранение настроек в localStorage
+        apiUrlInput.addEventListener('input', () => {
+            localStorage.setItem('huggingface_api_url', apiUrlInput.value);
+        });
+
+        apiTokenInput.addEventListener('input', () => {
+            localStorage.setItem('huggingface_api_token', apiTokenInput.value);
+        });
+
+        // Загрузка сохраненных настроек при загрузке страницы
+        window.addEventListener('load', () => {
+            const savedUrl = localStorage.getItem('huggingface_api_url');
+            const savedToken = localStorage.getItem('huggingface_api_token');
+            
+            if (savedUrl) {
+                apiUrlInput.value = savedUrl;
+            }
+            if (savedToken) {
+                apiTokenInput.value = savedToken;
+            }
+        });
+    </script>
+</body>
+</html>
